@@ -1,0 +1,20 @@
+# dependencies
+node_modules
+
+# build output
+.next
+next-env.d.ts
+*.tsbuildinfo
+
+# runtime data — your inventory + uploaded images (back up separately)
+data
+public/uploads
+
+# secrets
+.env*
+
+# local editor / agent settings
+.claude
+
+# private working docs + agent guide (kept local, not shared)
+CLAUDE.md

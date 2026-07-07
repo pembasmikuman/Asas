@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { Item } from "@/lib/items";
 import { scoreItem } from "@/lib/score";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 
 const COLOR = { keep: "var(--keep)", maybe: "var(--maybe)", leave: "var(--leave)" } as const;
 
@@ -32,14 +32,10 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   async function save() {
     if (!item) {
-      const res = await fetch("/api/items", {
+      // Add creates an unassessed item (score/verdict null → "New"). Reassess scores it.
+      await fetch("/api/items", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ name, brand, category, image_path: imagePath }),
-      });
-      const created: Item = await res.json();
-      await fetch(`/api/items/${created.id}`, {
-        method: "PUT", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, brand, category, image_path: imagePath, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable }),
       });
     } else {
       await fetch(`/api/items/${item.id}`, {
@@ -72,6 +68,48 @@ export default function ItemForm({ item }: { item?: Item }) {
     </span>
   );
 
+  const [catOpen, setCatOpen] = useState(false);
+  const CategorySelect = () => (
+    <>
+      <button type="button" onClick={() => setCatOpen(true)} style={{
+        display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
+        height: 44, padding: "0 12px", marginBottom: 14, background: "var(--card)", border: "1px solid var(--hairline)",
+        borderRadius: 10, fontSize: 14, color: "var(--body)", cursor: "pointer",
+      }}>
+        <span>{CAT_ICON[category] ?? "📦"} {category}</span>
+        <span style={{ color: "var(--muted)", fontSize: 11 }}>▼</span>
+      </button>
+
+      {/* backdrop */}
+      <div onClick={() => setCatOpen(false)} style={{
+        position: "fixed", inset: 0, zIndex: 20, background: "rgba(0,0,0,0.4)",
+        opacity: catOpen ? 1 : 0, pointerEvents: catOpen ? "auto" : "none", transition: "opacity .2s",
+      }} />
+      {/* sheet */}
+      <div style={{
+        position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 21,
+        maxWidth: 420, margin: "0 auto", background: "#fff",
+        borderRadius: "16px 16px 0 0", padding: "8px 16px 24px",
+        transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s ease",
+      }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--hairline)", margin: "8px auto 16px" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          {CATEGORIES.map((c) => (
+            <button key={c} type="button" onClick={() => { setCategory(c); setCatOpen(false); }} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 6px",
+              background: c === category ? "var(--card)" : "#fff",
+              border: `1px solid ${c === category ? "var(--primary)" : "var(--hairline)"}`,
+              borderRadius: 12, cursor: "pointer",
+            }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>{CAT_ICON[c] ?? "📦"}</span>
+              <span style={{ fontSize: 11, color: "var(--body)", textAlign: "center" }}>{c}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
   const Row = ({ label, children }: { label: string; children: React.ReactNode }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
       <span style={{ fontSize: 14, color: "var(--body)" }}>{label}</span>{children}
@@ -82,9 +120,11 @@ export default function ItemForm({ item }: { item?: Item }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <button onClick={() => router.back()} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>‹</button>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: COLOR[preview.verdict], color: "#fff", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 999 }}>
-          <span style={{ fontSize: 16 }}>{preview.score}</span>{preview.verdict}
-        </span>
+        {item && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: COLOR[preview.verdict], color: "#fff", fontSize: 13, fontWeight: 600, padding: "5px 12px", borderRadius: 999 }}>
+            <span style={{ fontSize: 16 }}>{preview.score}</span>{preview.verdict}
+          </span>
+        )}
       </div>
 
       <label style={{ position: "relative", display: "block", height: 150, background: "var(--card)", border: "1px dashed var(--hairline)", borderRadius: 12, marginBottom: 14, overflow: "hidden", cursor: "pointer" }}>
@@ -103,12 +143,11 @@ export default function ItemForm({ item }: { item?: Item }) {
 
       <input placeholder="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ marginBottom: 10 }} />
       <input placeholder="Winter jacket" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
-      <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ marginBottom: 14 }}>
-        {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-      </select>
+      <CategorySelect />
 
+      {item && (
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <Row label="Use in year 4?"><Seg value={useYear4} onChange={setUseYear4} options={[["no", "No"], ["maybe", "Maybe"], ["yes", "Yes"]]} /></Row>
+        <Row label="Use in 4th Year?"><Seg value={useYear4} onChange={setUseYear4} options={[["no", "No"], ["maybe", "Maybe"], ["yes", "Yes"]]} /></Row>
         <Row label="Used last 90 days?"><Seg value={used90d ? "y" : "n"} onChange={(v) => setUsed90d(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
         <Row label="Talk about it with passion?"><Seg value={passion ? "y" : "n"} onChange={(v) => setPassion(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
         <Row label="Kept just for looks?"><Seg value={forLooks ? "y" : "n"} onChange={(v) => setForLooks(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
@@ -120,6 +159,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           </button>
         </div>
       </div>
+      )}
 
       <button className="btn-primary" style={{ marginTop: 16 }} onClick={save}>Save</button>
       {item && (

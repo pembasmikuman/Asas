@@ -1,28 +1,83 @@
 :root {
-  --primary: #111111;
-  --primary-active: #242424;
-  --canvas: #ffffff;
-  --card: #f5f5f5;
-  --surface-soft: #f8f9fa;
-  --hairline: #e5e7eb;
-  --ink: #111111;
-  --body: #374151;
-  --muted: #6b7280;
-  --keep: #10b981;
-  --maybe: #f59e0b;
-  --leave: #ef4444;
+  /* greens */
+  --olive: #375E23;
+  --forest: #235E2D;
+  --pine: #235E4A;
+  --stripe: #16400F;
+  --card: #1D4A24;          /* dark-green raised card */
+  --card-border: rgba(255,255,255,0.09);
+  --chip: #2C6234;          /* inactive filter chip */
+  --outline: #3E7043;       /* outline-button + field border */
+  /* warm accents */
+  --orange: #F0562E;
+  --orange-dark: #C13F1C;   /* orange pill drop-shadow */
+  --gold: #F6A821;
+  --gold-dark: #C7871A;
+  --cream: #FCE7C4;         /* light card surface */
+  --cream-ink: #235E2D;     /* text on cream */
+  --cream-muted: #5F7A57;
+  --cream-line: #E4D2A6;    /* divider on cream */
+  --cream-field: #DFC99A;   /* segmented-control border on cream */
+  /* verdict trio */
+  --keep: #3FC97A;
+  --maybe: #F6A821;
+  --leave: #F0562E;
+  /* text on green */
+  --ink: #ffffff;
+  --muted: #A9C4A0;
+  --muted-2: #B9CFA9;
+  --faint: #8FAF88;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--surface-soft); color: var(--ink);
-  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
-.shell { max-width: 420px; margin: 0 auto; min-height: 100vh;
-  background: var(--canvas); padding: 20px 16px 96px; position: relative; }
-.display { font-weight: 600; letter-spacing: -0.04em; }
-.btn-primary { display: flex; align-items: center; justify-content: center;
-  width: 100%; height: 44px; background: var(--primary); color: #fff;
-  border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
-  cursor: pointer; }
-.btn-primary:active { background: var(--primary-active); }
+html, body {
+  background: #12280F; color: var(--ink);
+  font-family: var(--font-nunito), system-ui, sans-serif; font-weight: 600;
+}
+a { color: inherit; text-decoration: none; }
+
+/* The phone canvas: green gradient + tiger-stripe overlay, content above it. */
+.shell {
+  max-width: 420px; margin: 0 auto; min-height: 100vh; position: relative;
+  padding: 20px 16px 110px; overflow-x: hidden;
+  background: linear-gradient(180deg, #2A5A24 0%, #235E2D 55%, #235E4A 100%);
+}
+.shell::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.36; background-size: 280px 280px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27300%27%20height%3D%27300%27%20viewBox%3D%270%200%20300%20300%27%3E%3Cg%20fill%3D%27%2316400F%27%3E%3Cpath%20d%3D%27M40%20-10%20C54%2080%2054%20220%2040%20310%20C26%20220%2026%2080%2040%20-10%20Z%27%2F%3E%3Cpath%20d%3D%27M150%20-10%20C169%2080%20169%20220%20150%20310%20C131%20220%20131%2080%20150%20-10%20Z%27%2F%3E%3Cpath%20d%3D%27M260%20-10%20C273%2080%20273%20220%20260%20310%20C247%20220%20247%2080%20260%20-10%20Z%27%2F%3E%3Cpath%20d%3D%27M95%20-10%20C108%2045%20108%20105%2095%20152%20C82%20105%2082%2045%2095%20-10%20Z%27%2F%3E%3Cpath%20d%3D%27M210%20-10%20C224%2045%20224%20105%20210%20152%20C196%20105%20196%2045%20210%20-10%20Z%27%2F%3E%3Cpath%20d%3D%27M70%20158%20C82%20208%2082%20268%2070%20310%20C58%20268%2058%20208%2070%20158%20Z%27%2F%3E%3Cpath%20d%3D%27M225%20158%20C238%20208%20238%20268%20225%20310%20C212%20268%20212%20208%20225%20158%20Z%27%2F%3E%3Cpath%20d%3D%27M150%20158%20C162%20208%20162%20268%20150%20310%20C138%20268%20138%20208%20150%20158%20Z%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"); }
+.shell > * { position: relative; z-index: 1; }
+
+/* Anton display — chunky uppercase headers, big numbers, the lowercase logo. */
+.anton { font-family: var(--font-anton), Impact, sans-serif; font-weight: 400; }
+.logo { font-family: var(--font-anton), Impact, sans-serif; color: var(--gold);
+  text-transform: lowercase; line-height: 0.9; }
+
+/* Pill buttons with a solid drop-shadow that presses on tap. */
+.pill { display: inline-flex; align-items: center; justify-content: center;
+  border: none; border-radius: 999px; font-weight: 900; cursor: pointer;
+  font-family: inherit; transition: transform .05s, box-shadow .05s; }
+.btn-primary { width: 100%; height: 52px; font-size: 17px;
+  background: var(--orange); color: #fff; box-shadow: 0 6px 0 var(--orange-dark); }
+.btn-gold { background: var(--gold); color: var(--cream-ink); box-shadow: 0 6px 0 var(--gold-dark); }
+.btn-primary:active, .btn-gold:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--orange-dark); }
+.btn-outline { background: transparent; color: #fff; border: 2px solid var(--outline);
+  box-shadow: none; font-weight: 800; }
+
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-input, select { width: 100%; height: 40px; padding: 0 12px; font-size: 16px;
-  border: 1px solid var(--hairline); border-radius: 8px; background: #fff; }
+
+/* Dark-green form fields sitting on the canvas. */
+input, select, textarea {
+  width: 100%; height: 46px; padding: 0 14px; font-size: 16px; font-weight: 700;
+  color: #fff; background: var(--card); border: 1px solid var(--outline);
+  border-radius: 12px; font-family: inherit; }
+input::placeholder { color: var(--faint); font-weight: 700; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--gold); }
+
+@keyframes asasFloat { 0%,100%{ transform: translateY(0) } 50%{ transform: translateY(-8px) } }
+@keyframes asasWiggle { 0%,100%{ transform: rotate(-5deg) } 50%{ transform: rotate(5deg) } }
+.mascot-float { animation: asasFloat 4s ease-in-out infinite; }
+.mascot-float .asas-ear { transform-box: fill-box; transform-origin: 50% 100%;
+  animation: asasWiggle 2.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .mascot-float, .mascot-float .asas-ear { animation: none; }
+}

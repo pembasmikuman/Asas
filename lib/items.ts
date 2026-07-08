@@ -2,7 +2,7 @@ import { db } from "./db";
 import { scoreItem, type Verdict } from "./score";
 
 export type Item = {
-  id: number; name: string; brand: string | null; image_path: string | null; category: string;
+  id: number; name: string; brand: string | null; image_path: string | null; image_pos: string | null; category: string;
   sentimental: 0 | 1;
   use_year4: "no" | "maybe" | "yes" | null;
   used_90d: 0 | 1 | null; passion: 0 | 1 | null;
@@ -23,16 +23,16 @@ export function deleteItem(id: number): void {
 }
 
 export function createItem(input: {
-  name: string; brand: string | null; category: string; image_path: string | null;
+  name: string; brand: string | null; category: string; image_path: string | null; image_pos: string | null;
 }): Item {
   const info = db.prepare(
-    "INSERT INTO items (name, brand, category, image_path) VALUES (?, ?, ?, ?)"
-  ).run(input.name, input.brand, input.category, input.image_path);
+    "INSERT INTO items (name, brand, category, image_path, image_pos) VALUES (?, ?, ?, ?, ?)"
+  ).run(input.name, input.brand, input.category, input.image_path, input.image_pos);
   return getItem(Number(info.lastInsertRowid))!;
 }
 
 export function updateItem(id: number, input: {
-  name: string; brand: string | null; category: string; image_path: string | null;
+  name: string; brand: string | null; category: string; image_path: string | null; image_pos: string | null;
   sentimental: boolean; use_year4: "no" | "maybe" | "yes"; used_90d: boolean;
   passion: boolean; for_looks: boolean; replaceable: boolean;
 }): Item {
@@ -42,11 +42,11 @@ export function updateItem(id: number, input: {
     sentimental: input.sentimental,
   });
   db.prepare(`
-    UPDATE items SET name=?, brand=?, category=?, image_path=?, sentimental=?,
+    UPDATE items SET name=?, brand=?, category=?, image_path=?, image_pos=?, sentimental=?,
       use_year4=?, used_90d=?, passion=?, for_looks=?, replaceable=?,
       score=?, verdict=? WHERE id=?
   `).run(
-    input.name, input.brand, input.category, input.image_path, input.sentimental ? 1 : 0,
+    input.name, input.brand, input.category, input.image_path, input.image_pos, input.sentimental ? 1 : 0,
     input.use_year4, input.used_90d ? 1 : 0, input.passion ? 1 : 0,
     input.for_looks ? 1 : 0, input.replaceable ? 1 : 0, score, verdict, id
   );

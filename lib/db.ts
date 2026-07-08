@@ -15,6 +15,7 @@ db.exec(`
     name TEXT NOT NULL,
     brand TEXT,
     image_path TEXT,
+    image_pos TEXT DEFAULT '50% 50%',
     category TEXT NOT NULL,
     sentimental INTEGER NOT NULL DEFAULT 0,
     use_year4 TEXT,
@@ -31,4 +32,9 @@ db.exec(`
 // ponytail: migrate DBs created before `brand` existed; ignore if already there
 try {
   db.exec("ALTER TABLE items ADD COLUMN brand TEXT");
+} catch {}
+
+// ponytail: image framing (object-position) column; ignore if already there
+try {
+  db.exec("ALTER TABLE items ADD COLUMN image_pos TEXT DEFAULT '50% 50%'");
 } catch {}

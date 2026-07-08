@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const item = createItem({
     name: body.name, brand: body.brand ?? null, category: body.category,
-    image_path: body.image_path ?? null,
+    image_path: body.image_path ?? null, image_pos: body.image_pos ?? null,
   });
   return NextResponse.json(item, { status: 201 });
 }

@@ -7,13 +7,14 @@ export const CATEGORIES = [
   "toiletries",
   "furniture",
   "documents",
-  "fitness",
+  "sports",
+  "wellness",
   "sentimental",
   "misc",
 ] as const;
 
 export const CAT_ICON: Record<string, string> = {
   clothes: "👕", electronics: "🔌", books: "📚", kitchen: "🍳",
-  toiletries: "🧴", furniture: "🛋️", documents: "📄", fitness: "🏋️",
-  sentimental: "💛", misc: "📦",
+  toiletries: "🧴", furniture: "🛋️", documents: "📄", sports: "🏋️",
+  wellness: "🧘", sentimental: "💛", misc: "📦",
 };

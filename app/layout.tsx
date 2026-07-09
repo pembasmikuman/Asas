@@ -17,6 +17,12 @@ export const viewport: Viewport = { themeColor: "#12280F", viewportFit: "cover" 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${anton.variable} ${nunito.variable}`}>
+      <head>
+        {/* use-credentials so the manifest fetch carries the Cloudflare Access cookie;
+            without it Access 302-redirects the (credential-less) manifest request and
+            iOS never sees display:standalone. */}
+        <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
+      </head>
       <body><div className="shell">{children}</div></body>
     </html>
   );

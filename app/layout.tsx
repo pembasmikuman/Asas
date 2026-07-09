@@ -8,6 +8,8 @@ const nunito = Nunito({ subsets: ["latin"], weight: ["400", "600", "700", "800",
 export const metadata: Metadata = {
   title: "asas",
   appleWebApp: { capable: true, title: "Asas", statusBarStyle: "black-translucent" },
+  // Next only emits `mobile-web-app-capable`; iOS standalone needs the apple-prefixed one.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 export const viewport: Viewport = { themeColor: "#12280F", viewportFit: "cover" };

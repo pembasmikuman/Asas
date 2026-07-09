@@ -81,3 +81,22 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 @media (prefers-reduced-motion: reduce) {
   .mascot-float, .mascot-float .asas-ear { animation: none; }
 }
+
+/* Saved-verdict full-screen overlay: entrance choreography. */
+@keyframes asasPanelIn { from { opacity: 0; transform: scale(.96) } to { opacity: 1; transform: scale(1) } }
+@keyframes asasRise { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes asasPop { 0% { opacity: 0; transform: scale(0) } 70% { transform: scale(1.12) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes asasTwinkle { 0%,100% { opacity: .35; transform: scale(.8) } 50% { opacity: 1; transform: scale(1.3) } }
+
+.saved-panel { animation: asasPanelIn .35s ease-out both; }
+.saved-pop { animation: asasPop .5s cubic-bezier(.34,1.56,.64,1) both; }
+.saved-rise { animation: asasRise .45s ease-out both; }
+.saved-panel .dot { animation: asasTwinkle 2.4s ease-in-out infinite; }
+.saved-panel .dot:nth-child(2) { animation-delay: .3s }
+.saved-panel .dot:nth-child(3) { animation-delay: .6s }
+.saved-panel .dot:nth-child(4) { animation-delay: .9s }
+.saved-panel .dot:nth-child(5) { animation-delay: 1.2s }
+.saved-panel .dot:nth-child(6) { animation-delay: 1.5s }
+@media (prefers-reduced-motion: reduce) {
+  .saved-panel, .saved-pop, .saved-rise, .saved-panel .dot { animation: none; }
+}

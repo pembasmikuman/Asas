@@ -24,6 +24,12 @@ const SAVED_BG = {
   leave: "linear-gradient(160deg,#F98E6B 0%,#F0562E 55%,#C13F1C 100%)",
 } as const;
 
+const CONFETTI_COLORS = {
+  keep: ["#52D98C", "#F6E7B0", "#F6A821", "#ffffff"],
+  maybe: ["#FBD07A", "#F6A821", "#235E2D", "#ffffff"],
+  leave: ["#F98E6B", "#F6A821", "#F6E7B0", "#ffffff"],
+} as const;
+
 const SAVED_HEADLINE = { keep: "It's a keeper!", maybe: "Worth a maybe", leave: "Time to let go" } as const;
 const SAVED_TEXT_COLOR = { keep: "#123D1C", maybe: "#123D1C", leave: "#fff" } as const;
 
@@ -105,6 +111,13 @@ export default function ItemForm({ item }: { item?: Item }) {
         body: JSON.stringify({ name, brand, category, image_path: imagePath, image_pos: imagePos, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable }),
       });
       setSaved(preview);
+      // Lazy-load so confetti adds nothing to the initial bundle.
+      import("canvas-confetti").then(({ default: confetti }) => {
+        const colors = [...CONFETTI_COLORS[preview.verdict]];
+        confetti({ particleCount: 90, spread: 75, origin: { y: 0.35 }, colors, disableForReducedMotion: true });
+        setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 60, origin: { x: 0, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
+        setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 60, origin: { x: 1, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
+      });
     }
   }
 
@@ -294,7 +307,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       </div>
 
       {saved && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: SAVED_BG[saved.verdict] }}>
+        <div className="saved-panel" style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: SAVED_BG[saved.verdict] }}>
           <span className="dot" style={{ position: "absolute", top: "12%", left: "18%", width: 8, height: 8, background: "var(--cream)" }} />
           <span className="dot" style={{ position: "absolute", top: "20%", right: "14%", width: 10, height: 10, background: "var(--gold)" }} />
           <span className="dot" style={{ position: "absolute", top: "68%", left: "10%", width: 6, height: 6, background: "#fff" }} />
@@ -303,20 +316,20 @@ export default function ItemForm({ item }: { item?: Item }) {
           <span className="dot" style={{ position: "absolute", top: "85%", left: "38%", width: 8, height: 8, background: "var(--gold)" }} />
 
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "0 24px", textAlign: "center" }}>
-            <TigerRing mood="celebrate" size={132} border="var(--cream)" borderWidth={5} bg="rgba(255,255,255,0.22)" />
-            <h1 className="anton" style={{ fontSize: 40, textTransform: "uppercase", lineHeight: 0.95, color: SAVED_TEXT_COLOR[saved.verdict] }}>
+            <div className="saved-pop"><TigerRing mood="celebrate" size={132} border="var(--cream)" borderWidth={5} bg="rgba(255,255,255,0.22)" /></div>
+            <h1 className="anton saved-rise" style={{ animationDelay: ".18s", fontSize: 40, textTransform: "uppercase", lineHeight: 0.95, color: SAVED_TEXT_COLOR[saved.verdict] }}>
               {SAVED_HEADLINE[saved.verdict]}
             </h1>
-            <div style={{ color: SAVED_TEXT_COLOR[saved.verdict] }}>
+            <div className="saved-rise" style={{ animationDelay: ".26s", color: SAVED_TEXT_COLOR[saved.verdict] }}>
               <span className="anton" style={{ fontSize: 64 }}>{saved.score}</span>
               <span style={{ fontSize: 22, fontWeight: 800, opacity: 0.6 }}>/100</span>
             </div>
-            <p style={{ fontWeight: 700, fontSize: 15, color: SAVED_TEXT_COLOR[saved.verdict], opacity: saved.verdict === "leave" ? 0.9 : 0.75 }}>
+            <p className="saved-rise" style={{ animationDelay: ".34s", fontWeight: 700, fontSize: 15, color: SAVED_TEXT_COLOR[saved.verdict], opacity: saved.verdict === "leave" ? 0.9 : 0.75 }}>
               {savedSubtext(saved.verdict, name)}
             </p>
           </div>
 
-          <div style={{ padding: "0 24px 40px", display: "flex", justifyContent: "center" }}>
+          <div className="saved-rise" style={{ animationDelay: ".42s", padding: "0 24px 40px", display: "flex", justifyContent: "center" }}>
             <button className="pill" onClick={() => { router.push("/"); router.refresh(); }} style={{
               background: "#123D1C", color: "#fff", fontWeight: 900, padding: "16px 48px", fontSize: 16,
               boxShadow: "0 6px 0 rgba(0,0,0,0.25)", border: "none", cursor: "pointer",

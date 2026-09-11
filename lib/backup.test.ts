@@ -1,7 +1,7 @@
 import { test, expect } from "bun:test";
 import { toBackup, fromBackup, blobToDataUrl, dataUrlToBlob } from "./backup";
 
-type T = { id: number; name: string; image: Blob | null; score: number | null };
+type T = { id: number; name: string; image: Blob | null; score: number | null; created_at: string };
 
 const bytes = new Uint8Array(70_000).map((_, i) => (i * 37) % 256); // > one 0x8000 chunk
 
@@ -14,8 +14,8 @@ test("blob survives base64 round trip byte for byte", async () => {
 
 test("toBackup then fromBackup keeps ids, fields and photos", async () => {
   const items: T[] = [
-    { id: 7, name: "Jacket", image: new Blob([bytes], { type: "image/jpeg" }), score: 62 },
-    { id: 91, name: "Mug", image: null, score: null },
+    { id: 7, name: "Jacket", image: new Blob([bytes], { type: "image/jpeg" }), score: 62, created_at: "2026-09-11T00:00:00.000Z" },
+    { id: 91, name: "Mug", image: null, score: null, created_at: "2026-09-11T00:00:00.000Z" },
   ];
   const text = JSON.stringify(await toBackup(items, new Date("2026-09-11T00:00:00Z")));
   const parsed = JSON.parse(text);
@@ -33,4 +33,9 @@ test("fromBackup rejects files that are not Asas backups", () => {
   expect(() => fromBackup("{}")).toThrow("Not an Asas backup file");
   expect(() => fromBackup(JSON.stringify({ version: 1, items: [{ name: "no id" }] }))).toThrow("Not an Asas backup file");
   expect(() => fromBackup("not json")).toThrow();
+});
+
+test("fromBackup rejects an item missing created_at", () => {
+  const text = JSON.stringify({ version: 1, items: [{ id: 1, name: "Jacket", image: null }] });
+  expect(() => fromBackup<T>(text)).toThrow("Not an Asas backup file");
 });

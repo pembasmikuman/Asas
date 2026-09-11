@@ -7,7 +7,7 @@ import ItemForm from "../item-form";
 function EditInner() {
   const id = Number(useSearchParams().get("id"));
   const [item, setItem] = useState<Item | null | undefined>(undefined);
-  useEffect(() => { getItem(id).then((i) => setItem(i ?? null)); }, [id]);
+  useEffect(() => { getItem(id).then((i) => setItem(i ?? null)).catch(() => setItem(null)); }, [id]);
 
   const msg = { color: "var(--muted)", textAlign: "center", paddingTop: 80, fontWeight: 700 } as const;
   if (item === undefined) return <p style={msg}>Loading…</p>;

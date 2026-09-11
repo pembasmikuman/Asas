@@ -96,28 +96,36 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   async function save() {
     const basics = { name, brand, category, image, image_pos: imagePos };
-    if (!item) {
-      // Add creates an unassessed item (score/verdict null → "New"). Reassess scores it.
-      await createItem(basics);
-      router.push("/");
-    } else {
-      await updateItem(item.id, { ...basics, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable });
-      setSaved(preview);
-      // Lazy-load so confetti adds nothing to the initial bundle.
-      import("canvas-confetti").then(({ default: confetti }) => {
-        const colors = [...CONFETTI_COLORS[preview.verdict]];
-        confetti({ particleCount: 90, spread: 75, origin: { y: 0.35 }, colors, disableForReducedMotion: true });
-        setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 60, origin: { x: 0, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
-        setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 60, origin: { x: 1, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
-      });
+    try {
+      if (!item) {
+        // Add creates an unassessed item (score/verdict null → "New"). Reassess scores it.
+        await createItem(basics);
+        router.push("/");
+      } else {
+        await updateItem(item.id, { ...basics, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable });
+        setSaved(preview);
+        // Lazy-load so confetti adds nothing to the initial bundle.
+        import("canvas-confetti").then(({ default: confetti }) => {
+          const colors = [...CONFETTI_COLORS[preview.verdict]];
+          confetti({ particleCount: 90, spread: 75, origin: { y: 0.35 }, colors, disableForReducedMotion: true });
+          setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 60, origin: { x: 0, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
+          setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 60, origin: { x: 1, y: 0.5 }, colors, disableForReducedMotion: true }), 150);
+        });
+      }
+    } catch (err) {
+      alert(`Could not save: ${err}`);
     }
   }
 
   async function remove() {
     if (!item) return;
     if (!confirm(`Remove "${item.name}"? This can't be undone.`)) return;
-    await deleteItem(item.id);
-    router.push("/");
+    try {
+      await deleteItem(item.id);
+      router.push("/");
+    } catch (err) {
+      alert(`Could not remove: ${err}`);
+    }
   }
 
   const Seg = ({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: any) => void }) => (

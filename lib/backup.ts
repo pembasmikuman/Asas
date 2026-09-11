@@ -30,10 +30,10 @@ export async function toBackup<T extends { image: Blob | null }>(items: T[], now
 }
 
 /** Parse a backup file's text back into items with Blob photos. Throws on anything that isn't one. */
-export function fromBackup<T extends { id: number; name: string; image: Blob | null }>(text: string): T[] {
+export function fromBackup<T extends { id: number; name: string; image: Blob | null; created_at: string }>(text: string): T[] {
   const data = JSON.parse(text);
   const ok = data?.version === 1 && Array.isArray(data.items) &&
-    data.items.every((i: any) => typeof i?.id === "number" && typeof i?.name === "string");
+    data.items.every((i: any) => typeof i?.id === "number" && typeof i?.name === "string" && typeof i?.created_at === "string");
   if (!ok) throw new Error("Not an Asas backup file");
   return data.items.map((i: any) => ({ ...i, image: i.image ? dataUrlToBlob(i.image) : null }));
 }

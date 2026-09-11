@@ -23,8 +23,11 @@ function openDb(): Promise<IDBDatabase> {
   return (dbPromise ??= new Promise((resolve, reject) => {
     const req = indexedDB.open("asas", 1);
     req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      req.result.onclose = () => { dbPromise = null; }; // iOS can drop the connection when backgrounded
+      resolve(req.result);
+    };
+    req.onerror = () => { dbPromise = null; reject(req.error); };
   }));
 }
 

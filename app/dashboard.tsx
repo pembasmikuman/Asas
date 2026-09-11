@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { Item } from "@/lib/items";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 import { TigerRing } from "./mascot";
+import BackupBar from "./backup-bar";
 
 const FILTERS = ["all", "keep", "maybe", "leave", "new"] as const;
 const DOT: Record<string, string> = { keep: "var(--keep)", maybe: "var(--maybe)", leave: "var(--leave)" };
@@ -175,6 +176,8 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
           ))}
         </div>
       )}
+
+      <BackupBar onRestored={onReload} />
 
       {/* FAB */}
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, pointerEvents: "none" }}>

@@ -1,8 +1,7 @@
-import { db } from "./db";
 import { scoreItem, type Verdict } from "./score";
 
 export type Item = {
-  id: number; name: string; brand: string | null; image_path: string | null; image_pos: string | null; category: string;
+  id: number; name: string; brand: string | null; image: Blob | null; image_pos: string | null; category: string;
   sentimental: 0 | 1;
   use_year4: "no" | "maybe" | "yes" | null;
   used_90d: 0 | 1 | null; passion: 0 | 1 | null;
@@ -10,45 +9,84 @@ export type Item = {
   score: number | null; verdict: Verdict | null; created_at: string;
 };
 
-export function listItems(): Item[] {
-  return db.prepare("SELECT * FROM items ORDER BY created_at DESC").all() as Item[];
-}
-
-export function getItem(id: number): Item | undefined {
-  return db.prepare("SELECT * FROM items WHERE id = ?").get(id) as Item | undefined;
-}
-
-export function deleteItem(id: number): void {
-  db.prepare("DELETE FROM items WHERE id = ?").run(id);
-}
-
-export function createItem(input: {
-  name: string; brand: string | null; category: string; image_path: string | null; image_pos: string | null;
-}): Item {
-  const info = db.prepare(
-    "INSERT INTO items (name, brand, category, image_path, image_pos) VALUES (?, ?, ?, ?, ?)"
-  ).run(input.name, input.brand, input.category, input.image_path, input.image_pos);
-  return getItem(Number(info.lastInsertRowid))!;
-}
-
-export function updateItem(id: number, input: {
-  name: string; brand: string | null; category: string; image_path: string | null; image_pos: string | null;
+export type ItemBasics = { name: string; brand: string | null; category: string; image: Blob | null; image_pos: string | null };
+export type ItemAnswers = {
   sentimental: boolean; use_year4: "no" | "maybe" | "yes"; used_90d: boolean;
   passion: boolean; for_looks: boolean; replaceable: boolean;
-}): Item {
-  const { score, verdict } = scoreItem({
-    use_year4: input.use_year4, used_90d: input.used_90d, passion: input.passion,
-    for_looks: input.for_looks, replaceable: input.replaceable,
-    sentimental: input.sentimental,
+};
+
+// All data lives in this browser's IndexedDB: database "asas", one store "items" keyed by id.
+const STORE = "items";
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+function openDb(): Promise<IDBDatabase> {
+  return (dbPromise ??= new Promise((resolve, reject) => {
+    const req = indexedDB.open("asas", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  }));
+}
+
+/** Resolve once the transaction has committed (so writes are on disk), reject if it aborts. */
+function done(tx: IDBTransaction): Promise<void> {
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = tx.onabort = () => reject(tx.error);
   });
-  db.prepare(`
-    UPDATE items SET name=?, brand=?, category=?, image_path=?, image_pos=?, sentimental=?,
-      use_year4=?, used_90d=?, passion=?, for_looks=?, replaceable=?,
-      score=?, verdict=? WHERE id=?
-  `).run(
-    input.name, input.brand, input.category, input.image_path, input.image_pos, input.sentimental ? 1 : 0,
-    input.use_year4, input.used_90d ? 1 : 0, input.passion ? 1 : 0,
-    input.for_looks ? 1 : 0, input.replaceable ? 1 : 0, score, verdict, id
-  );
-  return getItem(id)!;
+}
+
+/** Run one request in its own transaction and return its result after commit. */
+async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
+  const tx = (await openDb()).transaction(STORE, mode);
+  const req = fn(tx.objectStore(STORE));
+  await done(tx);
+  return req.result;
+}
+
+export async function listItems(): Promise<Item[]> {
+  const all = await run("readonly", (s) => s.getAll() as IDBRequest<Item[]>);
+  return all.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
+}
+
+export function getItem(id: number): Promise<Item | undefined> {
+  return run("readonly", (s) => s.get(id) as IDBRequest<Item | undefined>);
+}
+
+export async function deleteItem(id: number): Promise<void> {
+  await run("readwrite", (s) => s.delete(id));
+}
+
+export async function createItem(input: ItemBasics): Promise<Item> {
+  // If tsc complains here, annotate `const draft: Omit<Item, "id">`. Never loosen `Item` or cast to any.
+  const draft: Omit<Item, "id"> = {
+    ...input, sentimental: 0, use_year4: null, used_90d: null, passion: null,
+    for_looks: null, replaceable: null, score: null, verdict: null, created_at: new Date().toISOString(),
+  };
+  const id = await run("readwrite", (s) => s.add(draft) as IDBRequest<number>);
+  return { ...draft, id };
+}
+
+export async function updateItem(id: number, input: ItemBasics & ItemAnswers): Promise<Item> {
+  const existing = await getItem(id);
+  if (!existing) throw new Error(`Item ${id} not found`);
+  const { score, verdict } = scoreItem(input);
+  const item: Item = {
+    ...existing,
+    name: input.name, brand: input.brand, category: input.category, image: input.image, image_pos: input.image_pos,
+    sentimental: input.sentimental ? 1 : 0, use_year4: input.use_year4, used_90d: input.used_90d ? 1 : 0,
+    passion: input.passion ? 1 : 0, for_looks: input.for_looks ? 1 : 0, replaceable: input.replaceable ? 1 : 0,
+    score, verdict,
+  };
+  await run("readwrite", (s) => s.put(item));
+  return item;
+}
+
+/** Wipe everything and write these items with their own ids, in one transaction (all or nothing). */
+export async function replaceAll(items: Item[]): Promise<void> {
+  const tx = (await openDb()).transaction(STORE, "readwrite");
+  const s = tx.objectStore(STORE);
+  s.clear();
+  for (const it of items) s.put(it);
+  await done(tx);
 }

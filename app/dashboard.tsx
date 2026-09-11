@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Item } from "@/lib/items";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 import { TigerRing } from "./mascot";
@@ -11,10 +11,21 @@ const FILTER_LABEL: Record<(typeof FILTERS)[number], string> = {
   all: "All", keep: "Keep", maybe: "Maybe", leave: "Let go", new: "New",
 };
 
-export default function Dashboard({ items }: { items: Item[] }) {
+export default function Dashboard({ items, onReload }: { items: Item[]; onReload: () => void }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [cat, setCat] = useState<string>("all");
   const [catOpen, setCatOpen] = useState(false);
+
+  // One object URL per photo, made when the item list loads and revoked when it changes.
+  // Keyed by id so filter changes reuse URLs instead of making new ones.
+  const [photoUrls, setPhotoUrls] = useState<Map<number, string>>(new Map());
+  useEffect(() => {
+    const m = new Map<number, string>();
+    for (const i of items) if (i.image) m.set(i.id, URL.createObjectURL(i.image));
+    setPhotoUrls(m);
+    return () => m.forEach((u) => URL.revokeObjectURL(u));
+  }, [items]);
+
   const assessed = items.filter((i) => i.verdict).length;
   const shown = items.filter((i) => {
     const verdictOk = filter === "all" ? true : filter === "new" ? !i.verdict : i.verdict === filter;
@@ -139,13 +150,13 @@ export default function Dashboard({ items }: { items: Item[] }) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
           {shown.map((i) => (
-            <Link key={i.id} href={`/items/${i.id}`} style={{
+            <Link key={i.id} href={`/items/edit?id=${i.id}`} style={{
               background: "var(--card)", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
               display: "block",
             }}>
               <div style={{ height: 92, background: "var(--cream)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {i.image_path
-                  ? <img src={i.image_path} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: i.image_pos ?? "50% 50%" }} />
+                {photoUrls.get(i.id)
+                  ? <img src={photoUrls.get(i.id)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: i.image_pos ?? "50% 50%" }} />
                   : <span style={{ fontSize: 40 }}>{CAT_ICON[i.category] ?? "📦"}</span>}
               </div>
               <div style={{ padding: "9px 11px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>

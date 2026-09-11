@@ -1,10 +1,11 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import type { Item } from "@/lib/items";
+import { createItem, updateItem, deleteItem, type Item } from "@/lib/items";
 import { scoreItem } from "@/lib/score";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 import { TigerRing } from "../mascot";
+import { useObjectUrl } from "../use-object-url";
 
 const VERDICT = {
   keep: { bg: "var(--keep)", ink: "#123D1C", label: "Keep" },
@@ -45,7 +46,8 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [name, setName] = useState(item?.name ?? "");
   const [brand, setBrand] = useState(item?.brand ?? "");
   const [category, setCategory] = useState(item?.category ?? "clothes");
-  const [imagePath, setImagePath] = useState<string | null>(item?.image_path ?? null);
+  const [image, setImage] = useState<Blob | null>(item?.image ?? null);
+  const imageUrl = useObjectUrl(image);
   const [imagePos, setImagePos] = useState(item?.image_pos ?? "50% 50%");
   const [uploading, setUploading] = useState(false);
   const [reframing, setReframing] = useState(false);
@@ -62,19 +64,12 @@ export default function ItemForm({ item }: { item?: Item }) {
 
   const preview = scoreItem({ use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable, sentimental });
 
-  async function upload(file: File) {
+  async function pickPhoto(file: File) {
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error(`upload failed (${res.status}): ${await res.text()}`);
-      const { path } = await res.json();
-      setImagePath(path);
+      setImage(file);
       setImagePos("50% 50%");
-      setReframing(true); // reframe step right after upload
-    } catch (err) {
-      alert(String(err));
+      setReframing(true); // reframe step right after picking
     } finally {
       setUploading(false);
     }
@@ -97,19 +92,13 @@ export default function ItemForm({ item }: { item?: Item }) {
   }
 
   async function save() {
+    const basics = { name, brand, category, image, image_pos: imagePos };
     if (!item) {
       // Add creates an unassessed item (score/verdict null → "New"). Reassess scores it.
-      await fetch("/api/items", {
-        method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, brand, category, image_path: imagePath, image_pos: imagePos }),
-      });
+      await createItem(basics);
       router.push("/");
-      router.refresh();
     } else {
-      await fetch(`/api/items/${item.id}`, {
-        method: "PUT", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, brand, category, image_path: imagePath, image_pos: imagePos, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable }),
-      });
+      await updateItem(item.id, { ...basics, sentimental, use_year4: useYear4, used_90d: used90d, passion, for_looks: forLooks, replaceable });
       setSaved(preview);
       // Lazy-load so confetti adds nothing to the initial bundle.
       import("canvas-confetti").then(({ default: confetti }) => {
@@ -124,9 +113,8 @@ export default function ItemForm({ item }: { item?: Item }) {
   async function remove() {
     if (!item) return;
     if (!confirm(`Remove "${item.name}"? This can't be undone.`)) return;
-    await fetch(`/api/items/${item.id}`, { method: "DELETE" });
+    await deleteItem(item.id);
     router.push("/");
-    router.refresh();
   }
 
   const Seg = ({ value, options, onChange }: { value: string; options: [string, string][]; onChange: (v: any) => void }) => (
@@ -223,8 +211,8 @@ export default function ItemForm({ item }: { item?: Item }) {
               display: "flex", height: "100%", alignItems: "center", justifyContent: "center",
               background: "rgba(18,40,15,0.25)", border: "2px dashed var(--outline)", borderRadius: 16,
               color: "var(--faint)", fontSize: 13, fontWeight: 700,
-            }}>Uploading…</div>
-          ) : !imagePath ? (
+            }}>Loading photo…</div>
+          ) : !imageUrl ? (
             <button type="button" onClick={() => inputRef.current?.click()} style={{
               display: "flex", width: "100%", height: "100%", alignItems: "center", justifyContent: "center",
               background: "rgba(18,40,15,0.25)", border: "2px dashed var(--outline)", borderRadius: 16,
@@ -238,30 +226,30 @@ export default function ItemForm({ item }: { item?: Item }) {
               onPointerLeave={() => (panRef.current = null)}
               style={{ position: "relative", height: "100%", borderRadius: 16, overflow: "hidden", touchAction: "none", cursor: "move" }}
             >
-              <img src={imagePath} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imagePos, pointerEvents: "none" }} />
+              <img src={imageUrl} alt="" draggable={false} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imagePos, pointerEvents: "none" }} />
               <span className="pill" style={{ position: "absolute", top: 8, left: 8, background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 11, fontWeight: 800, padding: "5px 10px" }}>Drag to reposition</span>
               <button type="button" onClick={() => setReframing(false)} className="pill" style={{ position: "absolute", bottom: 8, right: 8, background: "var(--orange)", color: "#fff", border: "none", fontSize: 12, fontWeight: 800, padding: "7px 16px", cursor: "pointer" }}>Done</button>
             </div>
           ) : (
             <>
               <button type="button" onClick={() => setPreviewOpen(true)} style={{ display: "block", width: "100%", height: "100%", padding: 0, border: "none", borderRadius: 16, overflow: "hidden", cursor: "zoom-in" }}>
-                <img src={imagePath} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imagePos }} />
+                <img src={imageUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: imagePos }} />
               </button>
               <button
                 type="button"
                 aria-label="Remove image"
-                onClick={() => { setImagePath(null); setImagePos("50% 50%"); }}
+                onClick={() => { setImage(null); setImagePos("50% 50%"); }}
                 style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 16, lineHeight: 1, cursor: "pointer" }}
               >×</button>
             </>
           )}
-          <input ref={inputRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+          <input ref={inputRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => e.target.files?.[0] && pickPhoto(e.target.files[0])} />
         </div>
 
-        {previewOpen && imagePath && (
+        {previewOpen && imageUrl && (
           <div onClick={() => setPreviewOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 30, background: "rgba(0,0,0,0.9)", display: "flex", flexDirection: "column" }}>
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
-              <img src={imagePath} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+              <img src={imageUrl} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
             </div>
             <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 10, padding: 16, justifyContent: "center" }}>
               <button type="button" className="pill" onClick={() => { setPreviewOpen(false); inputRef.current?.click(); }} style={{ background: "#fff", color: "var(--cream-ink)", border: "none", fontSize: 14, fontWeight: 800, padding: "12px 26px", cursor: "pointer" }}>Replace</button>
@@ -330,7 +318,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
 
           <div className="saved-rise" style={{ animationDelay: ".42s", padding: "0 24px 40px", display: "flex", justifyContent: "center" }}>
-            <button className="pill" onClick={() => { router.push("/"); router.refresh(); }} style={{
+            <button className="pill" onClick={() => router.push("/")} style={{
               background: "#123D1C", color: "#fff", fontWeight: 900, padding: "16px 48px", fontSize: 16,
               boxShadow: "0 6px 0 rgba(0,0,0,0.25)", border: "none", cursor: "pointer",
             }}>Done</button>

@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
-  serverExternalPackages: ["better-sqlite3"],
+  output: "export", // plain static files in out/, hosted on Cloudflare Pages
   devIndicators: false
 };

@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { createItem, updateItem, deleteItem, type Item } from "@/lib/items";
 import { scoreItem } from "@/lib/score";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
+import { shrinkImage } from "@/lib/image";
 import { TigerRing } from "../mascot";
 import { useObjectUrl } from "../use-object-url";
 
@@ -67,9 +68,11 @@ export default function ItemForm({ item }: { item?: Item }) {
   async function pickPhoto(file: File) {
     setUploading(true);
     try {
-      setImage(file);
+      setImage(await shrinkImage(file));
       setImagePos("50% 50%");
       setReframing(true); // reframe step right after picking
+    } catch (err) {
+      alert(`Could not use that photo: ${err}`);
     } finally {
       setUploading(false);
     }

@@ -1,0 +1,7 @@
+{
+  // Static site: Cloudflare Workers serves the files Next puts in out/.
+  "name": "asas",
+  "compatibility_date": "2026-09-12",
+  "assets": { "directory": "./out" },
+  "routes": [{ "pattern": "asas.pembasmikuman.my", "custom_domain": true }]
+}

@@ -196,7 +196,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   return (
     <>
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div className="rise" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <button onClick={() => router.back()} aria-label="Back" className="press" style={{
             width: 40, height: 40, borderRadius: "50%", background: "var(--card)", border: "2px solid var(--outline)",
             color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
@@ -217,7 +217,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           )}
         </div>
 
-        <div style={{ position: "relative", height: 150, marginBottom: 16 }}>
+        <div className="rise" style={{ ["--i" as string]: 1, position: "relative", height: 150, marginBottom: 16 }}>
           {uploading ? (
             <div style={{
               display: "flex", height: "100%", alignItems: "center", justifyContent: "center",
@@ -270,12 +270,14 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <input placeholder="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ marginBottom: 10 }} />
-        <input placeholder="Winter jacket" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
-        <CategorySelect />
+        <div className="rise" style={{ ["--i" as string]: 2 }}>
+          <input placeholder="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ marginBottom: 10 }} />
+          <input placeholder="Winter jacket" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
+          <CategorySelect />
+        </div>
 
         {item && (
-          <div style={{ background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
+          <div className="rise" style={{ ["--i" as string]: 3, background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
             <span style={{ color: "var(--orange)", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>The Quiz</span>
             <Row label="Use in 4th Year?"><Seg value={useYear4} onChange={setUseYear4} options={[["no", "No"], ["maybe", "Maybe"], ["yes", "Yes"]]} /></Row>
             <Row label="Used last 90 days?"><Seg value={used90d ? "y" : "n"} onChange={(v) => setUsed90d(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
@@ -292,7 +294,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         )}
 
         {item && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
+          <div className="rise" style={{ ["--i" as string]: 4, display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
             <TigerRing mood="thinking" size={44} border="var(--gold)" borderWidth={3} bg="var(--forest, #235E2D)" />
             <span style={{ color: "#fff", fontWeight: 800, fontSize: 13 }}>
               Scores <b style={{ color: VERDICT[preview.verdict].bg }}>{preview.score}/100</b> — {VERDICT_MSG[preview.verdict]}
@@ -300,7 +302,9 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <button className="pill btn-primary" style={{ marginTop: 16 }} onClick={save}>Save</button>
+        <div className="rise" style={{ ["--i" as string]: 5, marginTop: 16 }}>
+          <button className="pill btn-primary" onClick={save}>Save</button>
+        </div>
         {item && (
           <button onClick={remove} style={{ display: "block", width: "100%", marginTop: 10, height: 40, background: "none", border: "none", color: "var(--leave)", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>Remove item</button>
         )}

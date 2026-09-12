@@ -85,13 +85,15 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 
 /* Entrance: `translate` carries the rise so `transform` stays free for the press. */
 .rise {
-  opacity: 1; translate: 0 0;
+  opacity: 1; translate: none; /* `none`, not `0 0`: a set translate would trap `position: fixed` children */
   transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), transform .16s var(--ease-out);
   transition-delay: calc(min(var(--i, 0), 10) * 30ms), calc(min(var(--i, 0), 10) * 30ms), 0s;
 }
 @starting-style { .rise { opacity: 0; translate: 0 10px; } }
 .press:active { transform: scale(0.97); }
 .press { transition: transform .16s var(--ease-out); }
+/* `.press` is a later shorthand, so on a `rise press` element it wiped the entrance. Spell it out. */
+.rise.press { transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), transform .16s var(--ease-out); }
 
 /* Filter chips: colour only, fast enough to stay under notice at this tap rate. */
 .chip-tab { transition: background-color .14s ease, color .14s ease, transform .12s var(--ease-out); }

@@ -136,6 +136,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 /* Same rule for the new motion: keep the fades, drop every movement. */
 @media (prefers-reduced-motion: reduce) {
   .rise { transition: opacity .2s ease; translate: none; }
+  @starting-style { .rise { translate: none; } }
   .press:active, .chip-tab:active { transform: none; }
   .ring { transition: none; }
 }

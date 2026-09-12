@@ -47,17 +47,26 @@ async function run<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRe
   return req.result;
 }
 
+// Last known copy of each item, so opening one from the dashboard can paint on the
+// first frame instead of waiting a read. Lives for the page's lifetime only.
+const seen = new Map<number, Item>();
+export const peekItem = (id: number): Item | undefined => seen.get(id);
+
 export async function listItems(): Promise<Item[]> {
   const all = await run("readonly", (s) => s.getAll() as IDBRequest<Item[]>);
+  for (const it of all) seen.set(it.id, it);
   return all.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id);
 }
 
-export function getItem(id: number): Promise<Item | undefined> {
-  return run("readonly", (s) => s.get(id) as IDBRequest<Item | undefined>);
+export async function getItem(id: number): Promise<Item | undefined> {
+  const item = await run("readonly", (s) => s.get(id) as IDBRequest<Item | undefined>);
+  if (item) seen.set(id, item);
+  return item;
 }
 
 export async function deleteItem(id: number): Promise<void> {
   await run("readwrite", (s) => s.delete(id));
+  seen.delete(id);
 }
 
 export async function createItem(input: ItemBasics): Promise<Item> {
@@ -67,7 +76,9 @@ export async function createItem(input: ItemBasics): Promise<Item> {
     for_looks: null, replaceable: null, score: null, verdict: null, created_at: new Date().toISOString(),
   };
   const id = await run("readwrite", (s) => s.add(draft) as IDBRequest<number>);
-  return { ...draft, id };
+  const item = { ...draft, id };
+  seen.set(id, item);
+  return item;
 }
 
 export async function updateItem(id: number, input: ItemBasics & ItemAnswers): Promise<Item> {
@@ -82,6 +93,7 @@ export async function updateItem(id: number, input: ItemBasics & ItemAnswers): P
     score, verdict,
   };
   await run("readwrite", (s) => s.put(item));
+  seen.set(id, item);
   return item;
 }
 
@@ -92,4 +104,5 @@ export async function replaceAll(items: Item[]): Promise<void> {
   s.clear();
   for (const it of items) s.put(it);
   await done(tx);
+  seen.clear();
 }

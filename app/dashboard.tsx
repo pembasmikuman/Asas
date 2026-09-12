@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import type { Item } from "@/lib/items";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 import { TigerRing } from "./mascot";
-import BackupBar from "./backup-bar";
 
 const FILTERS = ["all", "keep", "maybe", "leave", "new"] as const;
 const DOT: Record<string, string> = { keep: "var(--keep)", maybe: "var(--maybe)", leave: "var(--leave)" };
@@ -12,7 +11,7 @@ const FILTER_LABEL: Record<(typeof FILTERS)[number], string> = {
   all: "All", keep: "Keep", maybe: "Maybe", leave: "Let go", new: "New",
 };
 
-export default function Dashboard({ items, onReload }: { items: Item[]; onReload: () => void }) {
+export default function Dashboard({ items }: { items: Item[] }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [cat, setCat] = useState<string>("all");
   const [catOpen, setCatOpen] = useState(false);
@@ -42,7 +41,7 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
       {/* header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          <div className="logo" style={{ fontSize: 34 }}>asas</div>
+          <Link href="/backup" aria-label="Backup and restore" className="logo press" style={{ display: "inline-block", fontSize: 34 }}>asas</Link>
           <div style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>Hi! Let&apos;s declutter 👋</div>
         </div>
         <TigerRing mood="wave" size={54} border="var(--orange)" borderWidth={3} bg="var(--card)" float />
@@ -62,9 +61,9 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
             <span style={{ fontSize: 20, color: "#8FA57F" }}>/ {items.length} assessed</span>
           </div>
         </div>
-        <div style={{
-          width: 56, height: 56, borderRadius: "50%",
-          background: `conic-gradient(var(--keep) ${deg}, #E7D3A6 ${deg})`,
+        <div className="ring" style={{
+          width: 56, height: 56, borderRadius: "50%", ["--deg" as string]: deg,
+          background: "conic-gradient(var(--keep) var(--deg), #E7D3A6 var(--deg))",
           display: "flex", alignItems: "center", justifyContent: "center", flex: "none",
         }}>
           <div style={{
@@ -79,7 +78,7 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
       {/* filter pills */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, overflowX: "auto" }}>
         {FILTERS.map((f) => (
-          <button key={f} onClick={() => setFilter(f)} style={{
+          <button key={f} className="chip-tab" onClick={() => setFilter(f)} style={{
             display: "inline-flex", alignItems: "center", gap: 6,
             fontSize: 13, fontWeight: 800, padding: "7px 15px", borderRadius: 999,
             border: "none", cursor: "pointer", whiteSpace: "nowrap", flex: "none",
@@ -113,8 +112,8 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
       <div style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 21,
         maxWidth: 420, margin: "0 auto", background: "var(--card)",
-        borderRadius: "20px 20px 0 0", padding: "8px 16px 24px",
-        transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s ease",
+        borderRadius: "20px 20px 0 0", padding: "8px 16px calc(24px + var(--sab))",
+        transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s var(--ease-out)",
       }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 16px" }} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
@@ -150,8 +149,9 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
-          {shown.map((i) => (
-            <Link key={i.id} href={`/items/edit?id=${i.id}`} style={{
+          {shown.map((i, n) => (
+            <Link key={i.id} href={`/items/edit?id=${i.id}`} className="rise press" style={{
+              ["--i" as string]: n,
               background: "var(--card)", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
               display: "block",
             }}>
@@ -177,10 +177,8 @@ export default function Dashboard({ items, onReload }: { items: Item[]; onReload
         </div>
       )}
 
-      <BackupBar onRestored={onReload} />
-
       {/* FAB */}
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: 16, pointerEvents: "none" }}>
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: "16px 16px calc(16px + var(--sab))", pointerEvents: "none" }}>
         <div style={{ width: "100%", maxWidth: 420, pointerEvents: "auto", padding: "0 16px" }}>
           <Link href="/items/new" className="pill btn-primary" style={{ textDecoration: "none" }}>+ Add item</Link>
         </div>

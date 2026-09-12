@@ -162,8 +162,8 @@ export default function ItemForm({ item }: { item?: Item }) {
       <div style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 21,
         maxWidth: 420, margin: "0 auto", background: "var(--card)",
-        borderRadius: "20px 20px 0 0", padding: "8px 16px 24px",
-        transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s ease",
+        borderRadius: "20px 20px 0 0", padding: "8px 16px calc(24px + var(--sab))",
+        transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s var(--ease-out)",
       }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 16px" }} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
@@ -197,7 +197,7 @@ export default function ItemForm({ item }: { item?: Item }) {
     <>
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <button onClick={() => router.back()} style={{
+          <button onClick={() => router.back()} aria-label="Back" className="press" style={{
             width: 40, height: 40, borderRadius: "50%", background: "var(--card)", border: "2px solid var(--outline)",
             color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
           }}>‹</button>
@@ -205,6 +205,7 @@ export default function ItemForm({ item }: { item?: Item }) {
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 8, background: VERDICT[preview.verdict].bg,
               color: VERDICT[preview.verdict].ink, fontSize: 13, fontWeight: 900, padding: "6px 14px 6px 6px", borderRadius: 999,
+              transition: "background-color .16s ease, color .16s ease",
             }}>
               <span className="anton" style={{
                 display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: 30, height: 30,
@@ -248,7 +249,7 @@ export default function ItemForm({ item }: { item?: Item }) {
               </button>
               <button
                 type="button"
-                aria-label="Remove image"
+                aria-label="Remove image" className="press"
                 onClick={() => { setImage(null); setImagePos("50% 50%"); }}
                 style={{ position: "absolute", top: 8, right: 8, width: 28, height: 28, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.55)", color: "#fff", fontSize: 16, lineHeight: 1, cursor: "pointer" }}
               >×</button>
@@ -259,10 +260,10 @@ export default function ItemForm({ item }: { item?: Item }) {
 
         {previewOpen && imageUrl && (
           <div onClick={() => setPreviewOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 30, background: "rgba(0,0,0,0.9)", display: "flex", flexDirection: "column" }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, overflow: "hidden" }}>
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "calc(16px + var(--sat)) 16px 16px", overflow: "hidden" }}>
               <img src={imageUrl} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
             </div>
-            <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 10, padding: 16, justifyContent: "center" }}>
+            <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 10, padding: "16px 16px calc(16px + var(--sab))", justifyContent: "center" }}>
               <button type="button" className="pill" onClick={() => { setPreviewOpen(false); inputRef.current?.click(); }} style={{ background: "#fff", color: "var(--cream-ink)", border: "none", fontSize: 14, fontWeight: 800, padding: "12px 26px", cursor: "pointer" }}>Replace</button>
               <button type="button" className="pill" onClick={() => setPreviewOpen(false)} style={{ background: "transparent", color: "#fff", border: "2px solid rgba(255,255,255,0.4)", fontSize: 14, fontWeight: 800, padding: "12px 26px", cursor: "pointer" }}>Close</button>
             </div>
@@ -284,7 +285,7 @@ export default function ItemForm({ item }: { item?: Item }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTop: "1px solid var(--cream-line)" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: "var(--cream-ink)" }}>Sentimental</span>
               <button onClick={() => setSentimental(!sentimental)} style={{ width: 46, height: 26, borderRadius: 999, border: "none", background: sentimental ? "var(--orange)" : "var(--cream-field)", position: "relative", cursor: "pointer" }}>
-                <span style={{ position: "absolute", top: 3, left: sentimental ? 23 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left .15s" }} />
+                <span style={{ position: "absolute", top: 3, left: 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transform: sentimental ? "translateX(20px)" : "none", transition: "transform .18s var(--ease-out)" }} />
               </button>
             </div>
           </div>
@@ -306,7 +307,7 @@ export default function ItemForm({ item }: { item?: Item }) {
       </div>
 
       {saved && (
-        <div className="saved-panel" style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", background: SAVED_BG[saved.verdict] }}>
+        <div className="saved-panel" style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", flexDirection: "column", paddingTop: "var(--sat)", background: SAVED_BG[saved.verdict] }}>
           <span className="dot" style={{ position: "absolute", top: "12%", left: "18%", width: 8, height: 8, background: "var(--cream)" }} />
           <span className="dot" style={{ position: "absolute", top: "20%", right: "14%", width: 10, height: 10, background: "var(--gold)" }} />
           <span className="dot" style={{ position: "absolute", top: "68%", left: "10%", width: 6, height: 6, background: "#fff" }} />
@@ -328,7 +329,7 @@ export default function ItemForm({ item }: { item?: Item }) {
             </p>
           </div>
 
-          <div className="saved-rise" style={{ animationDelay: ".42s", padding: "0 24px 40px", display: "flex", justifyContent: "center" }}>
+          <div className="saved-rise" style={{ animationDelay: ".42s", padding: "0 24px calc(40px + var(--sab))", display: "flex", justifyContent: "center" }}>
             <button className="pill" onClick={() => router.push("/")} style={{
               background: "#123D1C", color: "#fff", fontWeight: 900, padding: "16px 48px", fontSize: 16,
               boxShadow: "0 6px 0 rgba(0,0,0,0.25)", border: "none", cursor: "pointer",

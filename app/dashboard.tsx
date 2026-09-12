@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Item } from "@/lib/items";
-import { CATEGORIES, CAT_ICON } from "@/lib/categories";
+import { CAT_ICON, catalog } from "@/lib/categories";
 import { TigerRing } from "./mascot";
 
 const FILTERS = ["all", "keep", "maybe", "leave", "new"] as const;
@@ -13,20 +12,10 @@ const FILTER_LABEL: Record<(typeof FILTERS)[number], string> = {
 };
 
 export default function Dashboard({ items }: { items: Item[] }) {
-  const router = useRouter();
-  // Hide the dashboard on the tap, then navigate. The route swap costs about 100ms of work
-  // with this many cards, and the screen can't repaint while it runs, so the hide has to be
-  // painted first: set the class straight on the node, wait for that paint, then push.
-  const shell = useRef<HTMLDivElement>(null);
-  function go(e: React.MouseEvent, href: string) {
-    if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let opening in a new tab work
-    e.preventDefault();
-    shell.current?.classList.add("leaving");
-    requestAnimationFrame(() => setTimeout(() => router.push(href), 0));
-  }
-
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [cat, setCat] = useState<string>("all");
+  // Built-in categories plus any made-up ones the items carry, each with its icon.
+  const icons = new Map(catalog(items));
   const [catOpen, setCatOpen] = useState(false);
 
   // One object URL per photo, made when the item list loads and revoked when it changes.
@@ -50,11 +39,11 @@ export default function Dashboard({ items }: { items: Item[] }) {
   const deg = Math.round((items.length ? assessed / items.length : 0) * 360) + "deg";
 
   return (
-    <div ref={shell}>
+    <div>
       {/* header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          <Link href="/backup" onClick={(e) => go(e, "/backup")} aria-label="Backup and restore" className="logo press" style={{ display: "inline-block", fontSize: 34 }}>asas</Link>
+          <Link href="/backup" aria-label="Backup and restore" className="logo press" style={{ display: "inline-block", fontSize: 34 }}>asas</Link>
           <div style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>Hi! Let&apos;s declutter 👋</div>
         </div>
         <TigerRing mood="wave" size={54} border="var(--orange)" borderWidth={3} bg="var(--card)" float />
@@ -112,7 +101,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
         height: 46, padding: "0 14px", marginBottom: 16, background: "var(--card)", border: "1px solid var(--outline)",
         borderRadius: 12, fontSize: 14, color: "#fff", fontWeight: 800, cursor: "pointer",
       }}>
-        <span>{cat === "all" ? "🗂️ All categories" : `${CAT_ICON[cat] ?? "📦"} ${cat}`}</span>
+        <span>{cat === "all" ? "🗂️ All categories" : `${icons.get(cat) ?? "📦"} ${cat}`}</span>
         <span style={{ color: "var(--muted)", fontSize: 11 }}>▼</span>
       </button>
 
@@ -130,7 +119,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
       }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 16px" }} />
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {(["all", ...CATEGORIES] as string[]).map((c) => {
+          {(["all", ...icons.keys()] as string[]).map((c) => {
             const selected = c === cat;
             return (
               <button key={c} type="button" onClick={() => { setCat(c); setCatOpen(false); }} style={{
@@ -139,7 +128,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
                 border: selected ? "3px solid var(--gold)" : "3px solid transparent",
                 borderRadius: 16, cursor: "pointer",
               }}>
-                <span style={{ fontSize: 28, lineHeight: 1 }}>{c === "all" ? "🗂️" : CAT_ICON[c] ?? "📦"}</span>
+                <span style={{ fontSize: 28, lineHeight: 1 }}>{c === "all" ? "🗂️" : icons.get(c) ?? "📦"}</span>
                 <span style={{
                   fontSize: 11, fontWeight: 800, textAlign: "center",
                   color: selected ? "#fff" : "var(--cream-ink)",
@@ -163,7 +152,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
           {shown.map((i, n) => (
-            <Link key={i.id} href={`/items/edit?id=${i.id}`} onClick={(e) => go(e, `/items/edit?id=${i.id}`)} className="rise press" style={{
+            <Link key={i.id} href={`/items/edit?id=${i.id}`} className="rise press" style={{
               ["--i" as string]: n,
               background: "var(--card)", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
               display: "block",
@@ -171,7 +160,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
               <div style={{ height: 92, background: "var(--cream)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {photoUrls.get(i.id)
                   ? <img src={photoUrls.get(i.id)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: i.image_pos ?? "50% 50%" }} />
-                  : <span style={{ fontSize: 40 }}>{CAT_ICON[i.category] ?? "📦"}</span>}
+                  : <span style={{ fontSize: 40 }}>{i.category_icon ?? CAT_ICON[i.category] ?? "📦"}</span>}
               </div>
               <div style={{ padding: "9px 11px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
                 <span style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
@@ -193,7 +182,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
       {/* FAB */}
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: "16px 16px calc(16px + var(--sab))", pointerEvents: "none" }}>
         <div style={{ width: "100%", maxWidth: 420, pointerEvents: "auto", padding: "0 16px" }}>
-          <Link href="/items/new" onClick={(e) => go(e, "/items/new")} className="pill btn-primary" style={{ textDecoration: "none" }}>+ Add item</Link>
+          <Link href="/items/new" className="pill btn-primary" style={{ textDecoration: "none" }}>+ Add item</Link>
         </div>
       </div>
     </div>

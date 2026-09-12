@@ -2,6 +2,7 @@ import { scoreItem, type Verdict } from "./score";
 
 export type Item = {
   id: number; name: string; brand: string | null; image: Blob | null; image_pos: string | null; category: string;
+  category_icon: string | null; // set only for made-up categories; built-ins use CAT_ICON
   sentimental: 0 | 1;
   use_year4: "no" | "maybe" | "yes" | null;
   used_90d: 0 | 1 | null; passion: 0 | 1 | null;
@@ -9,7 +10,7 @@ export type Item = {
   score: number | null; verdict: Verdict | null; created_at: string;
 };
 
-export type ItemBasics = { name: string; brand: string | null; category: string; image: Blob | null; image_pos: string | null };
+export type ItemBasics = { name: string; brand: string | null; category: string; category_icon: string | null; image: Blob | null; image_pos: string | null };
 export type ItemAnswers = {
   sentimental: boolean; use_year4: "no" | "maybe" | "yes"; used_90d: boolean;
   passion: boolean; for_looks: boolean; replaceable: boolean;
@@ -87,7 +88,8 @@ export async function updateItem(id: number, input: ItemBasics & ItemAnswers): P
   const { score, verdict } = scoreItem(input);
   const item: Item = {
     ...existing,
-    name: input.name, brand: input.brand, category: input.category, image: input.image, image_pos: input.image_pos,
+    name: input.name, brand: input.brand, category: input.category, category_icon: input.category_icon,
+    image: input.image, image_pos: input.image_pos,
     sentimental: input.sentimental ? 1 : 0, use_year4: input.use_year4, used_90d: input.used_90d ? 1 : 0,
     passion: input.passion ? 1 : 0, for_looks: input.for_looks ? 1 : 0, replaceable: input.replaceable ? 1 : 0,
     score, verdict,

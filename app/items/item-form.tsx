@@ -1,9 +1,9 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { createItem, updateItem, deleteItem, type Item } from "@/lib/items";
+import { useEffect, useRef, useState } from "react";
+import { createItem, updateItem, deleteItem, listItems, type Item } from "@/lib/items";
 import { scoreItem } from "@/lib/score";
-import { CATEGORIES, CAT_ICON } from "@/lib/categories";
+import { CAT_ICON, catalog } from "@/lib/categories";
 import { shrinkImage } from "@/lib/image";
 import { TigerRing } from "../mascot";
 import { useObjectUrl } from "../use-object-url";
@@ -47,6 +47,10 @@ export default function ItemForm({ item }: { item?: Item }) {
   const [name, setName] = useState(item?.name ?? "");
   const [brand, setBrand] = useState(item?.brand ?? "");
   const [category, setCategory] = useState(item?.category ?? "clothes");
+  const [catIcon, setCatIcon] = useState<string | null>(item?.category_icon ?? null);
+  // The offered list needs every category the other items use, so it comes from the store.
+  const [cats, setCats] = useState<[string, string][]>(() => catalog(item ? [item] : []));
+  useEffect(() => { listItems().then((all) => setCats(catalog(all))).catch(() => {}); }, []);
   const [image, setImage] = useState<Blob | null>(item?.image ?? null);
   const imageUrl = useObjectUrl(image);
   const [imagePos, setImagePos] = useState(item?.image_pos ?? "50% 50%");
@@ -95,7 +99,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   }
 
   async function save() {
-    const basics = { name, brand, category, image, image_pos: imagePos };
+    const basics = { name, brand, category, category_icon: catIcon, image, image_pos: imagePos };
     try {
       if (!item) {
         // Add creates an unassessed item (score/verdict null → "New"). Reassess scores it.
@@ -142,19 +146,38 @@ export default function ItemForm({ item }: { item?: Item }) {
   );
 
   const [catOpen, setCatOpen] = useState(false);
-  const CategorySelect = () => (
+  const [draftCat, setDraftCat] = useState<{ name: string; icon: string } | null>(null);
+
+  function pick(c: string, icon: string) {
+    setCategory(c);
+    setCatIcon(CAT_ICON[c] ? null : icon); // built-ins keep their shared icon
+    setCatOpen(false);
+  }
+
+  function addCat() {
+    const name = draftCat?.name.trim();
+    if (!name) return;
+    const icon = draftCat?.icon.trim() || "\u{1F4E6}";
+    setCats((prev) => (prev.some(([c]) => c === name) ? prev : [...prev, [name, icon]]));
+    setDraftCat(null);
+    pick(name, icon);
+  }
+
+  // A plain element, not a component: as a component it would remount on every keystroke
+  // and the new-category box would lose the keyboard.
+  const categorySelect = (
     <>
       <button type="button" onClick={() => setCatOpen(true)} style={{
         display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%",
         height: 46, padding: "0 14px", marginBottom: 14, background: "var(--card)", border: "1px solid var(--outline)",
         borderRadius: 12, fontSize: 15, fontWeight: 800, color: "#fff", cursor: "pointer",
       }}>
-        <span>{CAT_ICON[category] ?? "📦"} {category}</span>
+        <span>{catIcon ?? CAT_ICON[category] ?? "\u{1F4E6}"} {category}</span>
         <span style={{ color: "var(--faint)", fontSize: 11 }}>▼</span>
       </button>
 
       {/* backdrop */}
-      <div onClick={() => setCatOpen(false)} style={{
+      <div onClick={() => { setCatOpen(false); setDraftCat(null); }} style={{
         position: "fixed", inset: 0, zIndex: 20, background: "rgba(0,0,0,0.4)",
         opacity: catOpen ? 1 : 0, pointerEvents: catOpen ? "auto" : "none", transition: "opacity .2s",
       }} />
@@ -166,23 +189,55 @@ export default function ItemForm({ item }: { item?: Item }) {
         transform: catOpen ? "translateY(0)" : "translateY(100%)", transition: "transform .25s var(--ease-out)",
       }}>
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "8px auto 16px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {CATEGORIES.map((c) => {
-            const selected = c === category;
-            return (
-              <button key={c} type="button" onClick={() => { setCategory(c); setCatOpen(false); }} style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 6px",
-                background: selected ? "var(--orange)" : "var(--cream)",
-                border: selected ? "3px solid var(--gold)" : "1px solid var(--cream-line)",
-                color: selected ? "#fff" : "var(--cream-ink)",
-                borderRadius: 16, cursor: "pointer",
-              }}>
-                <span style={{ fontSize: 26, lineHeight: 1 }}>{CAT_ICON[c] ?? "📦"}</span>
-                <span style={{ fontSize: 11, fontWeight: 700, textAlign: "center" }}>{c}</span>
-              </button>
-            );
-          })}
-        </div>
+        {draftCat ? (
+          <div style={{ paddingBottom: 8 }}>
+            <div style={{ display: "flex", gap: 10, marginBottom: 10 }}>
+              <input
+                value={draftCat.icon} onChange={(e) => setDraftCat({ ...draftCat, icon: [...e.target.value].slice(-1).join("") })}
+                placeholder="\u{1F642}" aria-label="Category emoji" inputMode="text"
+                style={{ width: 64, textAlign: "center", fontSize: 24, padding: 0, flex: "0 0 auto" }}
+              />
+              <input
+                value={draftCat.name} onChange={(e) => setDraftCat({ ...draftCat, name: e.target.value })}
+                placeholder="fragrances" aria-label="Category name" autoFocus
+                onKeyDown={(e) => e.key === "Enter" && addCat()}
+              />
+            </div>
+            <p style={{ color: "var(--muted)", fontSize: 12, fontWeight: 700, marginBottom: 12 }}>
+              Tap the emoji key on your keyboard to pick the icon.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button type="button" className="pill btn-primary btn-outline" onClick={() => setDraftCat(null)}>Cancel</button>
+              <button type="button" className="pill btn-primary btn-gold" onClick={addCat} disabled={!draftCat.name.trim()}>Add</button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, maxHeight: "50vh", overflowY: "auto" }}>
+            {cats.map(([c, icon]) => {
+              const selected = c === category;
+              return (
+                <button key={c} type="button" onClick={() => pick(c, icon)} style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 6px",
+                  background: selected ? "var(--orange)" : "var(--cream)",
+                  border: selected ? "3px solid var(--gold)" : "1px solid var(--cream-line)",
+                  color: selected ? "#fff" : "var(--cream-ink)",
+                  borderRadius: 16, cursor: "pointer",
+                }}>
+                  <span style={{ fontSize: 26, lineHeight: 1 }}>{icon}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, textAlign: "center" }}>{c}</span>
+                </button>
+              );
+            })}
+            <button type="button" onClick={() => setDraftCat({ name: "", icon: "" })} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "14px 6px",
+              background: "transparent", border: "2px dashed var(--outline)", color: "var(--muted-2)",
+              borderRadius: 16, cursor: "pointer",
+            }}>
+              <span style={{ fontSize: 26, lineHeight: 1 }}>+</span>
+              <span style={{ fontSize: 11, fontWeight: 700, textAlign: "center" }}>New</span>
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -196,7 +251,7 @@ export default function ItemForm({ item }: { item?: Item }) {
   return (
     <>
       <div>
-        <div className="rise" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <button onClick={() => router.back()} aria-label="Back" className="press" style={{
             width: 40, height: 40, borderRadius: "50%", background: "var(--card)", border: "2px solid var(--outline)",
             color: "#fff", fontSize: 20, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
@@ -217,7 +272,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           )}
         </div>
 
-        <div className="rise" style={{ ["--i" as string]: 1, position: "relative", height: 150, marginBottom: 16 }}>
+        <div style={{ position: "relative", height: 150, marginBottom: 16 }}>
           {uploading ? (
             <div style={{
               display: "flex", height: "100%", alignItems: "center", justifyContent: "center",
@@ -270,14 +325,14 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <div className="rise" style={{ ["--i" as string]: 1 }}>
+        <div>
           <input placeholder="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ marginBottom: 10 }} />
           <input placeholder="Winter jacket" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
-          <CategorySelect />
+          {categorySelect}
         </div>
 
         {item && (
-          <div className="rise" style={{ ["--i" as string]: 1, background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
+          <div style={{ background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
             <span style={{ color: "var(--orange)", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>The Quiz</span>
             <Row label="Use in 4th Year?"><Seg value={useYear4} onChange={setUseYear4} options={[["no", "No"], ["maybe", "Maybe"], ["yes", "Yes"]]} /></Row>
             <Row label="Used last 90 days?"><Seg value={used90d ? "y" : "n"} onChange={(v) => setUsed90d(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
@@ -294,7 +349,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         )}
 
         {item && (
-          <div className="rise" style={{ ["--i" as string]: 2, display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
             <TigerRing mood="thinking" size={44} border="var(--gold)" borderWidth={3} bg="var(--forest, #235E2D)" />
             <span style={{ color: "#fff", fontWeight: 800, fontSize: 13 }}>
               Scores <b style={{ color: VERDICT[preview.verdict].bg }}>{preview.score}/100</b> — {VERDICT_MSG[preview.verdict]}
@@ -302,7 +357,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <div className="rise" style={{ ["--i" as string]: 2, marginTop: 16 }}>
+        <div style={{ marginTop: 16 }}>
           <button className="pill btn-primary" onClick={save}>Save</button>
         </div>
         {item && (

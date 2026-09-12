@@ -95,6 +95,10 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 /* `.press` is a later shorthand, so on a `rise press` element it wiped the entrance. Spell it out. */
 .rise.press { transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), transform .16s var(--ease-out); }
 
+/* Leaving: swapping screens costs ~100ms of work on a phone, and the old screen sits
+   frozen through it. Fading it out on the tap turns that dead time into a deliberate exit. */
+.leaving { opacity: 0; translate: 0 -6px; transition: opacity .16s var(--ease-in-out), translate .16s var(--ease-in-out); }
+
 /* Filter chips: colour only, fast enough to stay under notice at this tap rate. */
 .chip-tab { transition: background-color .14s ease, color .14s ease, transform .12s var(--ease-out); }
 .chip-tab:active { transform: scale(0.96); }
@@ -137,7 +141,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 
 /* Same rule for the new motion: keep the fades, drop every movement. */
 @media (prefers-reduced-motion: reduce) {
-  .rise { transition: opacity .2s ease; translate: none; }
+  .rise, .leaving { transition: opacity .2s ease; translate: none; }
   @starting-style { .rise { translate: none; } }
   .press:active, .chip-tab:active { transform: none; }
   .ring { transition: none; }

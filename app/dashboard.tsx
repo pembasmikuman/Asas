@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Item } from "@/lib/items";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
@@ -12,6 +13,17 @@ const FILTER_LABEL: Record<(typeof FILTERS)[number], string> = {
 };
 
 export default function Dashboard({ items }: { items: Item[] }) {
+  const router = useRouter();
+  // Fade the dashboard out on the tap, then navigate. The route swap itself costs about
+  // 100ms with this many cards, and without the fade that time reads as a frozen screen.
+  const [leaving, setLeaving] = useState(false);
+  function go(e: React.MouseEvent, href: string) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let opening in a new tab work
+    e.preventDefault();
+    setLeaving(true);
+    setTimeout(() => router.push(href), 140);
+  }
+
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
   const [cat, setCat] = useState<string>("all");
   const [catOpen, setCatOpen] = useState(false);
@@ -37,11 +49,11 @@ export default function Dashboard({ items }: { items: Item[] }) {
   const deg = Math.round((items.length ? assessed / items.length : 0) * 360) + "deg";
 
   return (
-    <div>
+    <div className={leaving ? "leaving" : undefined}>
       {/* header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
-          <Link href="/backup" aria-label="Backup and restore" className="logo press" style={{ display: "inline-block", fontSize: 34 }}>asas</Link>
+          <Link href="/backup" onClick={(e) => go(e, "/backup")} aria-label="Backup and restore" className="logo press" style={{ display: "inline-block", fontSize: 34 }}>asas</Link>
           <div style={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>Hi! Let&apos;s declutter 👋</div>
         </div>
         <TigerRing mood="wave" size={54} border="var(--orange)" borderWidth={3} bg="var(--card)" float />
@@ -150,7 +162,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0,1fr))", gap: 12 }}>
           {shown.map((i, n) => (
-            <Link key={i.id} href={`/items/edit?id=${i.id}`} className="rise press" style={{
+            <Link key={i.id} href={`/items/edit?id=${i.id}`} onClick={(e) => go(e, `/items/edit?id=${i.id}`)} className="rise press" style={{
               ["--i" as string]: n,
               background: "var(--card)", borderRadius: 18, overflow: "hidden", textDecoration: "none", color: "inherit",
               display: "block",
@@ -180,7 +192,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
       {/* FAB */}
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, display: "flex", justifyContent: "center", padding: "16px 16px calc(16px + var(--sab))", pointerEvents: "none" }}>
         <div style={{ width: "100%", maxWidth: 420, pointerEvents: "auto", padding: "0 16px" }}>
-          <Link href="/items/new" className="pill btn-primary" style={{ textDecoration: "none" }}>+ Add item</Link>
+          <Link href="/items/new" onClick={(e) => go(e, "/items/new")} className="pill btn-primary" style={{ textDecoration: "none" }}>+ Add item</Link>
         </div>
       </div>
     </div>

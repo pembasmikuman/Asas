@@ -86,18 +86,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 /* Entrance: `translate` carries the rise so `transform` stays free for the press. */
 .rise {
   opacity: 1; translate: none; /* `none`, not `0 0`: a set translate would trap `position: fixed` children */
-  transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), transform .16s var(--ease-out);
+  transition: opacity .24s var(--ease-out), translate .24s var(--ease-out), transform .16s var(--ease-out);
   transition-delay: calc(min(var(--i, 0), 10) * 30ms), calc(min(var(--i, 0), 10) * 30ms), 0s;
 }
 @starting-style { .rise { opacity: 0; translate: 0 10px; } }
 .press:active { transform: scale(0.97); }
 .press { transition: transform .16s var(--ease-out); }
 /* `.press` is a later shorthand, so on a `rise press` element it wiped the entrance. Spell it out. */
-.rise.press { transition: opacity .32s var(--ease-out), translate .32s var(--ease-out), transform .16s var(--ease-out); }
+.rise.press { transition: opacity .24s var(--ease-out), translate .24s var(--ease-out), transform .16s var(--ease-out); }
 
-/* Leaving: swapping screens costs ~100ms of work on a phone, and the old screen sits
-   frozen through it. Fading it out on the tap turns that dead time into a deliberate exit. */
-.leaving { opacity: 0; translate: 0 -6px; transition: opacity .16s var(--ease-in-out), translate .16s var(--ease-in-out); }
+/* Leaving: swapping screens costs ~100ms of React work, and the old screen sits there
+   through it. A cut, not a fade: fading kept the old screen on show for longer than the
+   stall it was meant to cover. */
+.leaving { opacity: 0; }
 
 /* Filter chips: colour only, fast enough to stay under notice at this tap rate. */
 .chip-tab { transition: background-color .14s ease, color .14s ease, transform .12s var(--ease-out); }
@@ -141,7 +142,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--g
 
 /* Same rule for the new motion: keep the fades, drop every movement. */
 @media (prefers-reduced-motion: reduce) {
-  .rise, .leaving { transition: opacity .2s ease; translate: none; }
+  .rise { transition: opacity .2s ease; translate: none; }
   @starting-style { .rise { translate: none; } }
   .press:active, .chip-tab:active { transform: none; }
   .ring { transition: none; }

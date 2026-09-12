@@ -270,14 +270,14 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <div className="rise" style={{ ["--i" as string]: 2 }}>
+        <div className="rise" style={{ ["--i" as string]: 1 }}>
           <input placeholder="Brand (optional)" value={brand} onChange={(e) => setBrand(e.target.value)} style={{ marginBottom: 10 }} />
           <input placeholder="Winter jacket" value={name} onChange={(e) => setName(e.target.value)} style={{ marginBottom: 10 }} />
           <CategorySelect />
         </div>
 
         {item && (
-          <div className="rise" style={{ ["--i" as string]: 3, background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
+          <div className="rise" style={{ ["--i" as string]: 1, background: "var(--cream)", borderRadius: 20, padding: "14px 16px", color: "var(--cream-ink)", display: "flex", flexDirection: "column", gap: 11 }}>
             <span style={{ color: "var(--orange)", fontWeight: 900, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 }}>The Quiz</span>
             <Row label="Use in 4th Year?"><Seg value={useYear4} onChange={setUseYear4} options={[["no", "No"], ["maybe", "Maybe"], ["yes", "Yes"]]} /></Row>
             <Row label="Used last 90 days?"><Seg value={used90d ? "y" : "n"} onChange={(v) => setUsed90d(v === "y")} options={[["n", "No"], ["y", "Yes"]]} /></Row>
@@ -294,7 +294,7 @@ export default function ItemForm({ item }: { item?: Item }) {
         )}
 
         {item && (
-          <div className="rise" style={{ ["--i" as string]: 4, display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
+          <div className="rise" style={{ ["--i" as string]: 2, display: "flex", alignItems: "center", gap: 12, background: "var(--card)", border: "1px solid var(--card-border)", borderRadius: 16, padding: "9px 13px", marginTop: 14 }}>
             <TigerRing mood="thinking" size={44} border="var(--gold)" borderWidth={3} bg="var(--forest, #235E2D)" />
             <span style={{ color: "#fff", fontWeight: 800, fontSize: 13 }}>
               Scores <b style={{ color: VERDICT[preview.verdict].bg }}>{preview.score}/100</b> — {VERDICT_MSG[preview.verdict]}
@@ -302,7 +302,7 @@ export default function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
 
-        <div className="rise" style={{ ["--i" as string]: 5, marginTop: 16 }}>
+        <div className="rise" style={{ ["--i" as string]: 2, marginTop: 16 }}>
           <button className="pill btn-primary" onClick={save}>Save</button>
         </div>
         {item && (

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Item } from "@/lib/items";
 import { CATEGORIES, CAT_ICON } from "@/lib/categories";
 import { TigerRing } from "./mascot";
@@ -14,14 +14,15 @@ const FILTER_LABEL: Record<(typeof FILTERS)[number], string> = {
 
 export default function Dashboard({ items }: { items: Item[] }) {
   const router = useRouter();
-  // Fade the dashboard out on the tap, then navigate. The route swap itself costs about
-  // 100ms with this many cards, and without the fade that time reads as a frozen screen.
-  const [leaving, setLeaving] = useState(false);
+  // Hide the dashboard on the tap, then navigate. The route swap costs about 100ms of work
+  // with this many cards, and the screen can't repaint while it runs, so the hide has to be
+  // painted first: set the class straight on the node, wait for that paint, then push.
+  const shell = useRef<HTMLDivElement>(null);
   function go(e: React.MouseEvent, href: string) {
     if (e.metaKey || e.ctrlKey || e.shiftKey) return; // let opening in a new tab work
     e.preventDefault();
-    setLeaving(true);
-    setTimeout(() => router.push(href), 140);
+    shell.current?.classList.add("leaving");
+    requestAnimationFrame(() => setTimeout(() => router.push(href), 0));
   }
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
@@ -49,7 +50,7 @@ export default function Dashboard({ items }: { items: Item[] }) {
   const deg = Math.round((items.length ? assessed / items.length : 0) * 360) + "deg";
 
   return (
-    <div className={leaving ? "leaving" : undefined}>
+    <div ref={shell}>
       {/* header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
         <div>
